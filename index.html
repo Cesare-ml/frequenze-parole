@@ -216,7 +216,7 @@
         `Frequenza della parola "${input}": ${sum}`;
 
       if (!history.find(entry => entry.word === input)) {
-        history.push({ word: input, value: sum });
+        history.unshift({ word: input, value: sum });
         localStorage.setItem('wordHistory', JSON.stringify(history));
         updateHistoryTable();
       }
