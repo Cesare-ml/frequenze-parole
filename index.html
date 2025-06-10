@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequenza di una Parola</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+
+    h1, h2 {
+      color: #333;
+      margin-top: 1em;
+    }
+
+    .letter-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); /* Mobile-first: 5 colonne */
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .letter {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      border-radius: 4px;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    input, button {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    input {
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #006400;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #006400;
+    }
+
+    #matchingWords {
+      margin-top: 15px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ddd;
+    }
+
+    /* Miglioramenti per schermi più larghi */
+    @media (min-width: 600px) {
+      .letter-grid {
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      input, button {
+        display: inline-block;
+        width: auto;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+    }
+
+    @media (min-width: 900px) {
+      .letter-grid {
+        grid-template-columns: repeat(10, 1fr);
+      }
+    }
+
+    #matchingWords button {
+      font-size: 14px;
+      padding: 6px 12px;
+      border: none;
+      background-color: #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #matchingWords button:hover {
+      background-color: #ccc;
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>Valore delle Lettere (escluse K, J, W, X, Y)</h1>
+  <div class="letter-grid" id="letterGrid"></div>
+
+  <h2>Calcola la Frequenza di una Parola</h2>
+  <input type="text" id="wordInput" placeholder="Inserisci una parola">
+  <button onclick="calculateFrequency()">Calcola</button>
+
+  <div id="result"></div>
+  <div id="matchingWords"></div>
+
+  <h2>Storico Parole</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Parola</th>
+        <th>Frequenza</th>
+      </tr>
+    </thead>
+    <tbody id="historyTableBody"></tbody>
+  </table>
+
+  <script src="frequenze.js"></script>
+  <script>
+    const excluded = ['x', 'y', 'w', 'k', 'j'];
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(l => !excluded.includes(l));
+    const letterValues = {};
+
+    // Popola i valori delle lettere e la griglia
+    const letterGrid = document.getElementById('letterGrid');
+    alphabet.forEach((letter, index) => {
+      const value = index + 1;
+      letterValues[letter] = value;
+
+      const div = document.createElement('div');
+      div.className = 'letter';
+      div.innerText = `${letter.toUpperCase()} = ${value}`;
+      letterGrid.appendChild(div);
+    });
+
+    // Carica lo storico da localStorage
+    let history = JSON.parse(localStorage.getItem('wordHistory')) || [];
+
+    function updateHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      history.forEach((entry, index) => {
+        const row = document.createElement('tr');
+
+        const wordCell = document.createElement('td');
+        wordCell.textContent = entry.word;
+
+        const valueCell = document.createElement('td');
+        valueCell.textContent = entry.value;
+
+        const deleteCell = document.createElement('td');
+        const deleteBtn = document.createElement('img');
+        deleteBtn.src = 'https://cdn-icons-png.flaticon.com/512/1214/1214428.png'; // cestino classico
+        deleteBtn.alt = 'Elimina';
+        deleteBtn.title = 'Rimuovi parola';
+        deleteBtn.style.width = '20px';
+        deleteBtn.style.cursor = 'pointer';
+
+        deleteBtn.addEventListener('click', () => {
+          history.splice(index, 1);
+          localStorage.setItem('wordHistory', JSON.stringify(history));
+          updateHistoryTable();
+        });
+
+        deleteCell.appendChild(deleteBtn);
+
+        row.appendChild(wordCell);
+        row.appendChild(valueCell);
+        row.appendChild(deleteCell);
+
+        tbody.appendChild(row);
+      });
+    }
+
+
+
+    function calculateFrequency() {
+      const input = document.getElementById('wordInput').value.toLowerCase().trim();
+      if (!input) return;
+
+      let sum = 0;
+      for (const char of input) {
+        if (letterValues[char]) {
+          sum += letterValues[char];
+        }
+      }
+
+      document.getElementById('result').innerText =
+        `Frequenza della parola "${input}": ${sum}`;
+
+      if (!history.find(entry => entry.word === input)) {
+        history.push({ word: input, value: sum });
+        localStorage.setItem('wordHistory', JSON.stringify(history));
+        updateHistoryTable();
+      }
+
+      const localMatches = history
+        .filter(entry => entry.value === sum)
+        .map(entry => entry.word);
+
+      const dictMatches = frequenzeParole
+        .filter(([word, freq]) => freq === sum && !localMatches.includes(word))
+        .map(([word]) => word);
+
+      const allMatches = [...localMatches, ...dictMatches];
+
+      const matchingDiv = document.getElementById('matchingWords');
+      matchingDiv.innerHTML = ''; // Pulisce prima
+
+      if (allMatches.length === 0) {
+        matchingDiv.innerHTML = `<strong>Nessuna parola trovata con frequenza ${sum}.</strong>`;
+      } else {
+        const previewCount = 66;
+        const preview = allMatches.slice(0, previewCount);
+        const rest = allMatches.slice(previewCount);
+
+        const listEl = document.createElement('div');
+        listEl.innerHTML = `<strong>Parole con frequenza ${sum}:</strong><br><span id="previewWords">${preview.join(', ')}</span>`;
+
+        if (rest.length > 0) {
+          const restEl = document.createElement('span');
+          restEl.id = 'restWords';
+          restEl.style.display = 'none';
+          restEl.innerHTML = ', ' + rest.join(', ');
+
+          const toggleBtn = document.createElement('button');
+          toggleBtn.textContent = 'Mostra tutte';
+          toggleBtn.style.marginTop = '8px';
+          toggleBtn.style.display = 'block';
+
+          toggleBtn.addEventListener('click', () => {
+            const isHidden = restEl.style.display === 'none';
+            restEl.style.display = isHidden ? 'inline' : 'none';
+            toggleBtn.textContent = isHidden ? 'Nascondi' : 'Mostra tutte';
+          });
+
+          listEl.appendChild(restEl);
+          matchingDiv.appendChild(listEl);
+          matchingDiv.appendChild(toggleBtn);
+        } else {
+          matchingDiv.appendChild(listEl);
+        }
+      }
+
+
+    }
+
+    updateHistoryTable();
+  </script>
+
+</body>
+</html>
